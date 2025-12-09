@@ -59,8 +59,6 @@ def reglas_color(codigo_A, codigo_B):
     # Si no cumple ninguna, no hay arista
     return False
 
-reglas_color(12, 15)
-
 season1 = 0
 season2 = 0
 
@@ -92,10 +90,15 @@ def validar_conexion(prenda_A, prenda_B):
     Asume que las prendas son diccionarios/filas con: 'season', 'nivel', 'color_code'.
     """
 
+
+    # 0. Si son la misma prenda pero de distinto coolr
+    if prenda_A['ID'] == prenda_B['ID']:
+        return False
+
     # -----------------------------------------------------
     # 1. REGLA DE TEMPORADA (Obligatoria) 
-    # -----------------------------------------------------
-    if prenda_A['season'] != prenda_B['season']:
+    # ----------------------------------------------------
+    if prenda_A['Temporada'] != prenda_B['Temporada']:
         return False
 
     # -----------------------------------------------------
@@ -108,14 +111,14 @@ def validar_conexion(prenda_A, prenda_B):
 
     # -----------------------------------------------------
     # 3. REGLAS DE COLOR (Matemática del círculo cromático)
-    # -----2wqx------------------------------------------------
-    code_A = prenda_A['color_code']
-    code_B = prenda_B['color_code']
+    # -----------------------------------------------------
+    code_A = prenda_A['color_nivel']
+    code_B = prenda_B['color_nivel']
 
     # CASO ESPECIAL: Neutros (Blanco/Negro)
     # Si tienes códigos específicos para ellos (ej. -1 o 999), ponlos aquí.
     # Si combinan con todo, devolvemos True directamente.
-    codigos_neutros = [-1, 999] 
+    codigos_neutros = [0] 
     if code_A in codigos_neutros or code_B in codigos_neutros and code_A != code_B:
         return True
 
@@ -149,7 +152,7 @@ def validar_conexion(prenda_A, prenda_B):
 
     # --- D) Triádicas ---
     # Triángulo equilátero (cada 4 horas)
-    if distancia == 4 or distancia == 8:
+    if distancia == 4 and distancia == 8:
         return True
 
     # Si no ha entrado en ningún if anterior, no combinan
