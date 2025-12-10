@@ -1,159 +1,63 @@
 
-
-def reglas_color(codigo_A, codigo_B):
-    # 0. REGLA DE NEUTROS (Blanco y Negro)
-    # Asume que tienes una lista con los códigos de blanco y negro
-    # Si tus códigos son numéricos fuera del rango 0-116, ponlos aquí.
-    neuros = [999, -1] # Ejemplo: Sustituye con tus códigos reales de blanco/negro
-    
-    if codigo_A in neuros or codigo_B in neuros:
-        return True # Combinan con todo
-
-    # DECODIFICACIÓN
-    matiz_A = codigo_A // 10
-    intensidad_A = codigo_A % 10
-    
-    matiz_B = codigo_B // 10
-    intensidad_B = codigo_B % 10
-    
-    # Calcular distancia en la rueda (0 a 11)
-    # Esto nos dice cuántos "quesitos" del círculo los separan
-    distancia = abs(matiz_A - matiz_B)
-    
-    # ---------------------------------------------------------
-    # 1. MONOCROMÁTICAS (Mismo color, distinta intensidad)
-    # ---------------------------------------------------------
-    if matiz_A == matiz_B:
-        # La regla dice: NO pueden ser consecutivas (salto >= 2)
-        # Ejemplo: 15 y 16 (diferencia 1) -> False
-        # Ejemplo: 15 y 17 (diferencia 2) -> True
-        if abs(intensidad_A - intensidad_B) >= 2:
-            return True
+def validar_par_final(p1, p2):
+    # FASE 0: FÍSICOS
+    if p1['nivel'] == 1 and p2['nivel'] == 1: return False
+    if 'oversize' in p1['fits'] and 'oversize' in p2['fits']: return False
+    # FASE 1: ESTILO
+    if p1['has_style'] and p2['has_style']:
+        s1, s2 = p1['styles'], p2['styles']
+        r1, r2 = not s1.isdisjoint(C_RELAXED), not s2.isdisjoint(C_RELAXED)
+        f1, f2 = not s1.isdisjoint(C_FORMAL), not s2.isdisjoint(C_FORMAL)
+        match = False
+        if (r1 and r2) or (f1 and f2): match = True
+        elif not s1.isdisjoint(C_BOHO) and not s2.isdisjoint(C_BOHO): match = True
+        elif not s1.isdisjoint(C_PARTY) and not s2.isdisjoint(C_PARTY): match = True
         else:
-            return False # Son el mismo color pero intensidades muy cercanas
+            if (r1 and f2) or (r2 and f1): match = True
+            elif (not s1.isdisjoint(C_BOHO) and r2) or (not s2.isdisjoint(C_BOHO) and r1): match = True
+            p1p, p2p = not s1.isdisjoint(C_PARTY), not s2.isdisjoint(C_PARTY)
+            if (p1p and (f2 or r2)) or (p2p and (f1 or r1)): match = True
+        if not match: return False
 
-    # ---------------------------------------------------------
-    # 2. ANÁLOGAS (Vecinos en la rueda)
-    # ---------------------------------------------------------
-    # Vecinos significa distancia 1.
-    # OJO: El color 0 y el color 11 son vecinos (cierre del círculo)
-    if distancia == 1 or distancia == 11:
-        return True
-
-    # ---------------------------------------------------------
-    # 3. COMPLEMENTARIAS (Opuestos en la rueda)
-    # ---------------------------------------------------------
-    # En una rueda de 12, el opuesto está exactamente a 6 pasos.
-    if distancia == 6:
-        return True
-
-    # ---------------------------------------------------------
-    # 4. TRIÁDICAS (Triángulo equilátero)
-    # ---------------------------------------------------------
-    # En una rueda de 12, un triángulo divide el círculo en 3 partes de 4 pasos.
-    # Ejemplo: 0, 4, 8. 
-    # Distancia entre 0 y 4 es 4. Distancia entre 0 y 8 es 8.
-    if distancia == 4 or distancia == 8:
-        return True
-
-    # Si no cumple ninguna, no hay arista
-    return False
-
-season1 = 0
-season2 = 0
-
-def reglas_estructura_niveles(prenda_A, prenda_B):
-    # Definimos los niveles (esto debería venir de tus datos)
-    # Supongamos que en tu df tienes una columna 'nivel' con valores 1, 2 o 3
-    nivel_A = prenda_A['nivel']
-    nivel_B = prenda_B['nivel']
-
-    # REGLA CRÍTICA: Nunca conectar dos prendas de Nivel 1
-    # No queremos looks con dos pantalones o pantalón + vestido
-    if nivel_A == 1 and nivel_B == 1:
-        return False
-    
-    # OPCIONAL: Si quieres ser estricto con la regla de "1 de nivel 1 + 2 de otros"
-    # Podrías decidir conectar Nivel 1 SOLO con Nivel 2 o 3.
-    # Pero conectar Nivel 2 con Nivel 2 (Camiseta + Jersey) SÍ está permitido.
-    # Conectar Nivel 3 con Nivel 3 (Chaqueta + Bufanda) SÍ está permitido.
-    
-    return True
-
-
-
-
-
-def validar_conexion(prenda_A, prenda_B):
-    """
-    Devuelve True si prenda_A y prenda_B cumplen TODAS las reglas (Temporada, Nivel y Color).
-    Asume que las prendas son diccionarios/filas con: 'season', 'nivel', 'color_code'.
-    """
-
-
-    # 0. Si son la misma prenda pero de distinto coolr
-    if prenda_A['ID'] == prenda_B['ID']:
-        return False
-
-    # -----------------------------------------------------
-    # 1. REGLA DE TEMPORADA (Obligatoria) 
-    # ----------------------------------------------------
-    if prenda_A['Temporada'] != prenda_B['Temporada']:
-        return False
-
-    # -----------------------------------------------------
-    # 2. REGLA DE NIVELES (Estructural)
-    # -----------------------------------------------------
-    # Evitar conectar dos prendas de Nivel 1 (ej. Pantalón + Falda)
-    # Esto facilita luego buscar triangulos de 1 prenda Nvl1 + 2 prendas Nvl2/3
-    if prenda_A['nivel'] == 1 and prenda_B['nivel'] == 1:
-        return False
-
-    # -----------------------------------------------------
-    # 3. REGLAS DE COLOR (Matemática del círculo cromático)
-    # -----------------------------------------------------
-    code_A = prenda_A['color_nivel']
-    code_B = prenda_B['color_nivel']
-
-    # CASO ESPECIAL: Neutros (Blanco/Negro)
-    # Si tienes códigos específicos para ellos (ej. -1 o 999), ponlos aquí.
-    # Si combinan con todo, devolvemos True directamente.
-    codigos_neutros = [0] 
-    if code_A in codigos_neutros or code_B in codigos_neutros and code_A != code_B:
-        return True
-
-    # Decodificación (Tu sistema: Decena=Matiz, Unidad=Intensidad)
-    matiz_A = code_A // 10    # Del 0 al 11
-    int_A   = code_A % 10     # Del 0 al 6
-    
-    matiz_B = code_B // 10
-    int_B   = code_B % 10
-    
-    # Distancia en la rueda (número de pasos entre colores)
-    distancia = abs(matiz_A - matiz_B)
-
-    # --- A) Monocromáticas ---
-    # Mismo matiz, pero saltando intensidades (diferencia >= 2)
-    if matiz_A == matiz_B:
-        if abs(int_A - int_B) >= 2:
-            return True
+    # FASE 2: PRINTS
+    if p1['is_print'] and p2['is_print']:
+        pr1, pr2 = p1['prints'], p2['prints']
+        es_liso_1 = pr1.isdisjoint(G_LISO)
+        es_liso_2 = pr2.isdisjoint(G_LISO)
+        # ---- 1) LISO + ESTAMPADO → siempre combina ----
+        if not p1['is_print'] or not p2['is_print']:
+            pass  
+        # ---- 2) CUADROS + CUADROS → depende del color (lo validará fase 3) ----
+        elif (not pr1.isdisjoint(G_CUADROS)) and (not pr2.isdisjoint(G_CUADROS)):
+            pass  
+        # ---- 3) ANIMAL + GEOMÉTRICO → mismo tono ----
+        elif ((not pr1.isdisjoint(G_AUDACES) and not pr2.isdisjoint(G_GEOMETRICOS)) or
+            (not pr2.isdisjoint(G_AUDACES) and not pr1.isdisjoint(G_GEOMETRICOS))):
+            if min(abs(h1 - h2), 12 - abs(h1 - h2)) != 0:
+                return False
+        # ---- 4) FLORES + RAYAS → mismo tono ----
+        elif ((not pr1.isdisjoint(G_ORGANICOS) and not pr2.isdisjoint(G_RAYAS)) or
+            (not pr2.isdisjoint(G_ORGANICOS) and not pr1.isdisjoint(G_RAYAS))):
+            if min(abs(h1 - h2), 12 - abs(h1 - h2)) != 0:
+                return False
+        # ---- 5) RAYAS + TOPOS → mismo tono ----
+        elif ((not pr1.isdisjoint(G_PUNTOS) and not pr2.isdisjoint(G_RAYAS)) or
+            (not pr2.isdisjoint(G_PUNTOS) and not pr1.isdisjoint(G_RAYAS))):
+            if min(abs(h1 - h2), 12 - abs(h1 - h2)) != 0:
+                return False
         else:
-            return False # Intensidades consecutivas o iguales no valen
+            return False
 
-    # --- B) Análogas ---
-    # Colores vecinos (distancia 1) o el cierre del círculo (0 y 11)
-    if distancia == 1 or distancia == 11:
-        return True
-
-    # --- C) Complementarias ---
-    # Colores opuestos exactos (mitad del reloj de 12 horas)
-    if distancia == 6:
-        return True
-
-    # --- D) Triádicas ---
-    # Triángulo equilátero (cada 4 horas)
-    if distancia == 4 and distancia == 8:
-        return True
-
-    # Si no ha entrado en ningún if anterior, no combinan
+    # FASE 3: COLOR
+    c1, c2 = p1['color_nivel'], p2['color_nivel']
+    if c1 in (0, 2, 4) or c2 in (0, 2, 4): return True # Colores neutros/comodín
+    
+    h1, i1 = divmod(c1, 10)
+    h2, i2 = divmod(c2, 10)
+    
+    dist = min(abs(h1 - h2), 12 - abs(h1 - h2))
+    
+    if dist == 0: return abs(i1 - i2) >= 2 # Mismo tono, diferente intensidad
+    if dist in (1, 4, 6): return True # Análogos, Tríada, Complementario
+    
     return False
