@@ -6,5 +6,6 @@ Resultados/
 .venv/
 venv/
 env/
-.csv
+*.csv
+Modelos/
 *.ipynb_checkpoints/
