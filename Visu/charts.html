@@ -4,24 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lookiero Dashboard - Gráficos</title>
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Estilos personalizados -->
     <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 400px;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        /* Clase para ocultar secciones */
+        .d-none-custom {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
       <div class="container">
         <a class="navbar-brand fw-bold" href="index.html">Lookiero Dashboard</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
@@ -33,42 +51,76 @@
       </div>
     </nav>
 
-    <section class="py-5">
+    <section class="py-5 bg-light">
       <div class="container">
-        <h2 class="mb-4 text-center fw-bold">Visualización de Datos</h2>
-
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="chart-container p-3">
-              <h5 class="text-center mb-3">Embudo de Onboarding (UX)</h5>
-              <div id="funnelChart"></div>
+        
+        <div class="d-flex justify-content-center mb-5">
+            <div class="btn-group" role="group" aria-label="Selector de gráficos">
+                <button type="button" class="btn btn-outline-primary active tab-btn" data-target="section-onboarding">
+                    Analisis Onboarding (UX)
+                </button>
+                <button type="button" class="btn btn-outline-primary tab-btn" data-target="section-prendas">
+                    Prendas
+                </button>
+                <button type="button" class="btn btn-outline-primary tab-btn" data-target="section-looklike">
+                    Look & Like
+                </button>
             </div>
-          </div>
-          <div class="col-md-6">
-            <div class="chart-container p-3">
-              <h5 class="text-center mb-3">Grafo de Prendas</h5>
-              <div id="graphContainer"></div>
-            </div>
-          </div>
-          <div class="col-12">
-            <div class="chart-container p-3">
-              <h5 class="text-center mb-3">Look & Like</h5>
-              <canvas id="looklikeChart" height="150"></canvas>
-            </div>
-          </div>
         </div>
+
+        <div id="section-onboarding" class="view-section">
+            <h2 class="mb-4 text-center fw-bold text-dark">Análisis de Comportamiento (Onboarding)</h2>
+            <p class="text-center text-muted mb-4">Visualización de tiempos de respuesta y puntos de fricción.</p>
+            <div class="row g-4">
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3">⏱️ Tiempo mediano por Paso</h5>
+                        <div id="timeChart"></div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3">🔙 Fricción: Retrocesos</h5>
+                        <div id="backtrackChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-prendas" class="view-section d-none-custom">
+            <h2 class="mb-4 text-center fw-bold text-dark">Análisis de Prendas</h2>
+            <p class="text-center text-muted mb-4">Distribución y relaciones entre tipos de ropa.</p>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="chart-container p-4 d-flex align-items-center justify-content-center">
+                        <p class="text-muted">Esperando datos de Prendas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-looklike" class="view-section d-none-custom">
+            <h2 class="mb-4 text-center fw-bold text-dark">Look & Like</h2>
+            <p class="text-center text-muted mb-4">Análisis de preferencias de usuarios.</p>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="chart-container p-4 d-flex align-items-center justify-content-center">
+                        <p class="text-muted">Esperando datos de Look & Like...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
       </div>
     </section>
 
-    <footer class="bg-light py-4 mt-5 text-center">
-      <p class="mb-0">&copy; 2025 Lookiero Dashboard. Todos los derechos reservados.</p>
+    <footer class="bg-white py-4 mt-auto text-center border-top">
+      <p class="mb-0 text-muted">&copy; 2025 Lookiero Dashboard.</p>
     </footer>
 
-    <!-- Librerías -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div id="tooltip" class="tooltip"></div>
 
-    <!-- Script principal -->
-    <script src="script.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="graficos_ux.js"></script>
 </body>
 </html>
