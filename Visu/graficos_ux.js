@@ -473,3 +473,211 @@ function drawTimelineChart(data) {
             tooltip.style("opacity", 0);
         });
 }
+
+
+// ==========================================
+//   SECCIÓN: PRENDAS (Actualizado - Color por Nivel)
+// ==========================================
+
+const btnPrendas = document.querySelector('[data-target="section-prendas"]');
+if (btnPrendas) {
+    btnPrendas.addEventListener('click', () => {
+        // Forzamos el redibujado para asegurar que se cuadre bien el ancho
+        const container = document.getElementById("scatterChart");
+        if (container) container.innerHTML = ""; 
+        loadPrendasCharts();
+    });
+}
+
+function loadPrendasCharts() {
+    const csvPath = "../Datos/Transformados/df_limpio.csv"; 
+
+    d3.csv(csvPath).then(data => {
+        
+        // --- 1. PROCESAMIENTO PARA SCATTER PLOT ---
+        // Agrupamos por: TIPO + ESTILO + NIVEL
+        // Esto genera muchos más puntos y nos permite colorear por Nivel.
+        const scatterRollup = d3.rollup(data, 
+            v => {
+                return {
+                    count: v.length,
+                    avgLength: d3.mean(v, d => +d.long_cm1 || 0),
+                    mainFit: d3.mode(v, d => d.fit1)
+                };
+            }, 
+            d => d.tipo_prenda2,
+            d => d.style1,
+            d => d.nivel // <--- Nueva agrupación por Nivel
+        );
+
+        let scatterData = [];
+        scatterRollup.forEach((stylesMap, type) => {
+            stylesMap.forEach((levelsMap, style) => {
+                levelsMap.forEach((stats, nivel) => {
+                    // Filtro suave: quitamos basura (longitud 0) pero dejamos grupos pequeños
+                    if (stats.avgLength > 0 && stats.count > 5) {
+                        scatterData.push({
+                            type: type,
+                            style: style,
+                            nivel: nivel, // Guardamos el nivel
+                            length: stats.avgLength,
+                            count: stats.count,
+                            fit: stats.mainFit
+                        });
+                    }
+                });
+            });
+        });
+
+        // --- 2. DATOS COLORES (Top 12) ---
+        // (Sin cambios aquí, se mantiene para el gráfico de barras)
+        const colorRollup = d3.rollup(data, v => v.length, d => d.Color);
+        let colorData = Array.from(colorRollup, ([key, value]) => ({ color: key, count: value }));
+        colorData.sort((a, b) => b.count - a.count);
+        colorData = colorData.slice(0, 12); 
+
+        // --- INYECCIÓN HTML ---
+        const sectionContainer = document.getElementById("section-prendas");
+        
+        // Si no existe la estructura, la creamos
+        if(!document.getElementById("scatterChart")) {
+            sectionContainer.innerHTML = `
+                <h2 class="mb-4 text-center fw-bold text-dark">Inventario de Prendas</h2>
+                <p class="text-center text-muted mb-4">Distribución por Nivel y Estilo.</p>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="chart-container p-4 shadow-sm border rounded bg-white">
+                            <h5 class="fw-bold mb-3">✨ Mapa de Niveles (Scatter Plot)</h5>
+                            <p class="text-muted small">
+                                Cada punto es una combinación de <strong>Prenda + Estilo + Nivel</strong>.<br>
+                                <span class="badge rounded-pill" style="background-color:#2ecc71">Nivel 1</span>
+                                <span class="badge rounded-pill" style="background-color:#f1c40f text-dark">Nivel 2</span>
+                                <span class="badge rounded-pill" style="background-color:#8e44ad">Nivel 3</span>
+                            </p>
+                            <div id="scatterChart"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="chart-container p-4 shadow-sm border rounded bg-white">
+                            <h5 class="fw-bold mb-3">🎨 Colores Reales en Inventario</h5>
+                            <div id="realColorChart"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+             document.getElementById("scatterChart").innerHTML = "";
+             document.getElementById("realColorChart").innerHTML = "";
+        }
+
+        // --- DIBUJAR ---
+        // Timeout para asegurar que el div tiene ancho real antes de dibujar
+        setTimeout(() => {
+            drawScatterPlot(scatterData);
+            drawRealColorChart(colorData);
+        }, 150);
+
+    });
+}
+
+// ------------------------------------------------------
+//  FUNCIONES DE DIBUJO ACTUALIZADAS
+// ------------------------------------------------------
+
+function drawScatterPlot(data) {
+    const container = document.getElementById("scatterChart");
+    // Calculamos el ancho basándonos en el contenedor padre para que cuadre bien
+    const width = container.getBoundingClientRect().width || 800; 
+    const height = 500;
+    const margin = { top: 30, right: 40, bottom: 50, left: 60 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
+    const svg = d3.select(container)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Escalas
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.length) + 5])
+        .range([0, chartWidth]);
+
+    const y = d3.scaleLog()
+        .domain([5, d3.max(data, d => d.count) * 1.5]) // Ajuste min para log
+        .range([chartHeight, 0])
+        .nice();
+
+    // ESCALA DE COLOR POR NIVEL
+    // Asumimos que nivel viene como "1", "2", "3" (string del CSV)
+    const color = d3.scaleOrdinal()
+        .domain(["1", "2", "3"]) 
+        .range(["#2ecc71", "#f1c40f", "#8e44ad"]); // Verde (1), Amarillo (2), Morado (3)
+
+    // Ejes
+    svg.append("g")
+        .attr("transform", `translate(0,${chartHeight})`)
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", chartWidth)
+        .attr("y", 40)
+        .attr("fill", "#333")
+        .style("text-anchor", "end")
+        .style("font-weight", "bold")
+        .text("Longitud Media (cm)");
+
+    svg.append("g")
+        .call(d3.axisLeft(y).ticks(5, "~s"))
+        .append("text")
+        .attr("x", -10)
+        .attr("y", -10)
+        .attr("fill", "#333")
+        .style("text-anchor", "end")
+        .style("font-weight", "bold")
+        .text("Popularidad (Log)");
+
+    // Puntos
+    svg.selectAll("circle")
+        .data(data)
+        .join("circle")
+        .attr("cx", d => x(d.length))
+        .attr("cy", d => y(d.count))
+        .attr("r", 6)
+        .style("fill", d => color(d.nivel)) // <--- COLOR POR NIVEL
+        .style("opacity", 0.7)
+        .attr("stroke", "white")
+        .attr("stroke-width", 1)
+        .on("mouseover", (event, d) => {
+            d3.select(event.currentTarget).attr("r", 9).style("opacity", 1).attr("stroke", "#333");
+            tooltip.style("opacity", 1)
+                .html(`<strong>${d.type}</strong><br>
+                       Estilo: ${d.style}<br>
+                       <span style="color:${color(d.nivel)}">● Nivel ${d.nivel}</span><br>
+                       Longitud: ${d.length.toFixed(1)} cm<br>
+                       Items: ${d.count}`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", (e) => {
+            d3.select(e.currentTarget).attr("r", 6).style("opacity", 0.7).attr("stroke", "white");
+            tooltip.style("opacity", 0);
+        });
+
+    // Leyenda de Nivel (Dentro del gráfico, esquina superior derecha)
+    const legend = svg.append("g").attr("transform", `translate(${chartWidth - 80}, 0)`);
+    const niveles = ["1", "2", "3"];
+    
+    legend.append("text").attr("x", 0).attr("y", -10).text("Nivel").style("font-size", "12px").style("font-weight", "bold");
+
+    niveles.forEach((nivel, i) => {
+        const row = legend.append("g").attr("transform", `translate(0, ${i * 20})`);
+        row.append("circle").attr("r", 6).attr("fill", color(nivel));
+        row.append("text").attr("x", 12).attr("y", 4).text(nivel).style("font-size", "12px");
+    });
+}
