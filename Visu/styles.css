@@ -1,0 +1,309 @@
+/* =========================================
+   1. IDENTIDAD NUEVA (Colores extraídos)
+   ========================================= */
+:root {
+    /* --- TUS COLORES --- */
+    /* El Verde Turquesa (Teal) de la imagen */
+    --brand-primary: #00A094; 
+    --brand-hover: #00857A; /* Un poco más oscuro para el hover */
+    
+    /* El Rosa Nude/Beige suave de la imagen */
+    --brand-nude: #ffc5e4; 
+    --brand-nude-dark: #d17689; /* Para bordes o detalles del nude */
+
+    /* --- BASES NEUTRAS --- */
+    --bg-body: #FAFAFA; /* Blanco roto limpio */
+    --bg-card: #FFFFFF;
+    
+    /* Tipografía */
+    --text-main: #222222; /* Negro suave */
+    --text-secondary: #666666; /* Gris neutro */
+    
+    /* UI Elements */
+    --radius-card: 12px; /* Bordes un poco menos redondos, más elegantes */
+    --radius-btn: 50px;
+    --shadow-soft: 0 10px 40px -10px rgba(0, 160, 148, 0.08); /* Sombra con un toque del verde */
+    --shadow-card: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+/* =========================================
+   2. GENERAL
+   ========================================= */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--text-main);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+a {
+    text-decoration: none;
+    color: var(--brand-primary);
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: var(--brand-hover);
+}
+
+/* =========================================
+   3. NAVBAR 
+   ========================================= */
+.navbar {
+    background-color: var(--brand-nude);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    color: var(--text-main) !important;
+    font-weight: 800;
+    font-size: 1.4rem;
+}
+
+.nav-link {
+    color: var(--text-secondary) !important;
+    font-weight: 500;
+    margin: 0 10px;
+    position: relative;
+}
+
+/* Subrayado verde al pasar el mouse */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--brand-primary);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+    width: 100%;
+}
+
+.nav-link.active {
+    color: var(--brand-primary) !important;
+    font-weight: 600;
+}
+
+/* =========================================
+   4. HERO SECTION 
+   ========================================= */
+.hero {
+
+    background-color: var(--brand-nude);
+    padding: 90px 0;
+    border-radius: var(--radius-card);
+    margin: 30px auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: var(--brand-primary);
+    border-radius: 50%;
+    opacity: 0.05; /* Muy transparente */
+    z-index: 0;
+}
+
+.hero .container {
+    position: relative;
+    z-index: 1;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.hero p {
+    color: #5a5a5a;
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+/* BOTONES: Usamos el Verde */
+.btn-primary, .hero .btn {
+    background-color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-btn);
+    padding: 14px 45px;
+    font-weight: 600;
+    color: #fff !important; /* Texto blanco */
+    box-shadow: 0 4px 15px rgba(0, 160, 148, 0.3); /* Sombra verde */
+}
+
+.hero .btn:hover {
+    background-color: var(--brand-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 160, 148, 0.5);
+}
+
+/* =========================================
+   5. TARJETAS
+   ========================================= */
+.summary-card {
+    background: var(--bg-card);
+    border: 1px solid transparent;
+    border-radius: var(--radius-card);
+    padding: 30px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-soft);
+    border-color: var(--brand-nude-dark); /* Borde sutil nude al hover */
+}
+
+.summary-card h5 {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Los números grandes en Verde */
+.summary-card p {
+    color: var(--brand-primary);
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.summary-card small {
+    color: #888;
+    margin-top: 10px;
+    display: block;
+}
+
+/* Tarjeta especial "Reglas" con fondo Nude */
+.card.bg-nude {
+    background-color: var(--brand-nude);
+}
+
+/* =========================================
+   7. FOOTER
+   ========================================= */
+footer {
+    background: white;
+    color: var(--text-secondary);
+    padding: 40px 0;
+    margin-top: 80px;
+    border-top: 1px solid #f0f0f0;
+}
+/* =========================================
+   8. RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+    /* Ajustamos el Hero para que no ocupe tanto */
+    .hero {
+        padding: 50px 20px;
+        margin: 15px;
+    }
+
+    .hero h1 {
+        font-size: 2.2rem; /* Título más pequeño */
+    }
+
+    /* Hacemos la rueda más pequeña para que quepa */
+    .wheel {
+        width: 300px;
+        height: 300px;
+    }
+    
+    /* Ajustamos el contenedor de la rueda */
+    .wheel-container::after {
+        width: 340px;
+        height: 340px;
+    }
+
+    /* Márgenes para las tarjetas en columna */
+    .summary-card {
+        margin-bottom: 15px;
+    }
+}
+
+/* =========================================
+   RUEDA CROMÁTICA SVG
+   ========================================= */
+
+.wheel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+    position: relative;
+    padding: 20px;
+}
+
+
+
+.wheel {
+    /* RESPONSIVIDAD MÁGICA */
+    width: 100%;           /* Ocupa el ancho disponible */
+    max-width: 520px;      /* Pero no más de 520px */
+    height: auto;          /* Mantiene la proporción automáticamente */
+    
+    /* Estética */
+    overflow: visible;     /* Permite que los efectos salgan un poco */
+    filter: drop-shadow(0 10px 20px rgba(0, 160, 148, 0.1)); /* Sombra suave verdosa */
+}
+
+/* Las porciones del gráfico */
+.slice {
+    cursor: pointer;
+    transition: all 0.4s ease; /* Transición suave */
+    stroke: #ffffff; /* Borde blanco entre colores para limpieza */
+    stroke-width: 1.5px;
+    transform-origin: center; /* Para que el zoom salga del centro */
+}
+
+/* Hover: */
+.slice:hover {
+    opacity: 0.9;
+    stroke-width: 3px;
+    z-index: 10; /* Intenta ponerse encima */
+}
+
+/* ESTADO: NO COMBINAN*/
+.slice.hidden {
+    opacity: 0.08; /* Casi invisible, efecto "ghost" */
+    pointer-events: none; /* No se puede clicar lo que no combina */
+    fill: #ccc; /* Opcional: ponerlo grisáceo */
+}
+
+/* ESTADO: SELECCIONADO */
+.slice.active {
+    stroke: var(--text-main); /* Borde negro elegante al seleccionado */
+    stroke-width: 1px;
+    opacity: 1 !important;
+
+}
+
+/*color: rgb(214, 241, 233);
+background-color: rgb(198, 102, 102);
