@@ -1,0 +1,335 @@
+/* =========================================
+   1. IDENTIDAD NUEVA (Paleta Tierra & Coral)
+   ========================================= */
+:root {
+    /* --- TUS NUEVOS COLORES --- */
+    --color-dark-brown: #593831;  /* Texto principal y títulos */
+    --color-rust:       #c1634f;  /* Color PRIMARIO (Botones, Links) */
+    --color-peach:      #f29b88;  /* Fondos suaves, acentos */
+    --color-medium:     #a67665;  /* Bordes, detalles */
+    --color-coral:      #c75551;  /* Hover, alertas, destacados */
+
+    /* --- MAPEO DE VARIABLES DE MARCA --- */
+    --brand-primary: var(--color-rust); 
+    --brand-hover:   var(--color-coral);
+    
+    /* Fondo Navbar/Hero: Usamos el peach pero muy suavizado o tal cual si quieres impacto */
+    --brand-bg-soft: #fff8f6; /* Un blanco tintado muy suave derivado de tu paleta */
+    --brand-nude:    var(--color-peach); 
+
+    /* --- BASES NEUTRAS --- */
+    --bg-body: #FFFAF8; /* Blanco cálido, no nuclear */
+    --bg-card: #FFFFFF;
+    
+    /* Tipografía */
+    --text-main: var(--color-dark-brown); /* Usamos tu marrón oscuro en vez de negro */
+    --text-secondary: #8c756e; /* Un gris-marrón derivado para subtítulos */
+    
+    /* UI Elements */
+    --radius-card: 12px;
+    --radius-btn: 50px;
+    
+    /* Sombras ajustadas a los tonos cálidos (Rojizas/Marrones en vez de verdes) */
+    --shadow-soft: 0 10px 40px -10px rgba(193, 99, 79, 0.15); 
+    --shadow-card: 0 4px 20px rgba(89, 56, 49, 0.06);
+}
+
+/* =========================================
+   2. GENERAL
+   ========================================= */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--text-main); /* Marrón oscuro */
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+a {
+    text-decoration: none;
+    color: var(--brand-primary);
+    transition: all 0.3s ease;
+}
+
+a:hover {
+    color: var(--brand-hover);
+}
+
+/* =========================================
+   3. NAVBAR 
+   ========================================= */
+.navbar {
+    background-color: #ffffff; /* Fondo blanco para limpieza */
+    border-bottom: 2px solid var(--brand-nude); /* Línea color peach abajo */
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    color: var(--text-main) !important;
+    font-weight: 800;
+    font-size: 1.4rem;
+}
+
+.nav-link {
+    color: var(--text-secondary) !important;
+    font-weight: 500;
+    margin: 0 10px;
+    position: relative;
+}
+
+/* Subrayado con el color Rust */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--brand-primary);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+    width: 100%;
+}
+
+.nav-link.active {
+    color: var(--brand-primary) !important;
+    font-weight: 600;
+}
+
+/* =========================================
+   4. HERO SECTION 
+   ========================================= */
+.hero {
+    /* Fondo degradado suave usando tus colores peach y blanco */
+    background: linear-gradient(180deg, rgba(242, 155, 136, 0.15) 0%, rgba(255,255,255,0) 100%);
+    padding: 90px 0;
+    border-radius: var(--radius-card);
+    margin: 0px auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero .container {
+    position: relative;
+    z-index: 1;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+}
+
+.hero p {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+/* BOTONES: Usamos el Rust (#c1634f) */
+.btn-primary, .hero .btn {
+    background-color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-btn);
+    padding: 14px 45px;
+    font-weight: 600;
+    color: #fff !important;
+    box-shadow: 0 4px 15px rgba(193, 99, 79, 0.3); /* Sombra rojiza */
+}
+
+.hero .btn:hover {
+    background-color: var(--brand-hover); /* Cambia a Coral */
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(199, 85, 81, 0.4);
+}
+
+/* =========================================
+   5. TARJETAS
+   ========================================= */
+.summary-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(166, 118, 101, 0.1); /* Borde sutil marrón medio */
+    border-radius: var(--radius-card);
+    padding: 30px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-soft);
+    border-color: var(--color-peach); /* Borde Peach al hover */
+}
+
+.summary-card h5 {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.summary-card h6 {
+    color: var(--color-medium); /* Marrón medio */
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Los números grandes en Rust */
+.summary-card p {
+    color: var(--brand-primary);
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.summary-card small {
+    color: var(--color-medium);
+    margin-top: 10px;
+    display: block;
+}
+
+/* Tarjeta especial "Reglas" con fondo suave */
+.card.bg-nude {
+    background-color: rgba(242, 155, 136, 0.2); /* Tu color Peach con transparencia */
+}
+
+/* =========================================
+   7. FOOTER
+   ========================================= */
+/* =========================================
+   7. FOOTER (Integrado)
+   ========================================= */
+footer {
+    /* Usamos el marrón oscuro de la marca para el fondo */
+    background-color: var(--text-main); 
+    
+    /* Texto en color claro (Peach suave o blanco) */
+    color: var(--brand-nude); 
+    
+    padding: 60px 0;
+    margin-top: 80px;
+    border-top: none; /* Quitamos el borde porque el cambio de color ya separa */
+}
+
+footer p {
+    opacity: 0.8; /* Un poco de transparencia para que no sea blanco puro agresivo */
+    font-size: 0.9rem;
+}
+
+/* =========================================
+   8. RESPONSIVE
+   ========================================= */
+@media (max-width: 768px) {
+    .hero {
+        padding: 50px 20px;
+        margin: 15px;
+    }
+
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .wheel {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .wheel-container::after {
+        width: 340px;
+        height: 340px;
+    }
+
+    .summary-card {
+        margin-bottom: 15px;
+    }
+}
+
+/* =========================================
+   RUEDA CROMÁTICA SVG
+   ========================================= */
+.wheel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 40px 0;
+    position: relative;
+    padding: 20px;
+}
+
+.wheel {
+    width: 100%;
+    max-width: 520px;
+    height: auto;
+    overflow: visible;
+    filter: drop-shadow(0 10px 20px rgba(89, 56, 49, 0.15)); /* Sombra marrón */
+}
+
+/* Las porciones del gráfico */
+.slice {
+    cursor: pointer;
+    transition: all 0.4s ease;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+    transform-origin: center;
+}
+
+.slice:hover {
+    opacity: 0.9;
+    stroke-width: 3px;
+    z-index: 10;
+}
+
+/* ESTADO: NO COMBINAN */
+.slice.hidden {
+    opacity: 0.15;
+    pointer-events: none;
+    fill: #e0e0e0;
+}
+
+/* ESTADO: SELECCIONADO */
+.slice.active {
+    stroke: var(--text-main); /* Borde marrón oscuro */
+    stroke-width: 2px;
+    opacity: 1 !important;
+}
+
+/* Animación de Máquina de Escribir */
+.brand-animate {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 0;
+    vertical-align: middle;
+    line-height: 1.2;
+    
+    animation: 
+        typing 2s steps(30, end) forwards, 
+        blink 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 100%; border-right-color: transparent; }
+}
+
+@keyframes blink {
+    from, to { border-color: transparent; }
+    50% { border-color: var(--brand-primary); } /* Parpadea en color Rust */
+}

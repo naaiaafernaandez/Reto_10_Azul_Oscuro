@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lookiero Dashboard - Gráficos</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <style>
+        /* 1. CONTENEDORES DE GRÁFICOS: Usamos tus variables para bordes y sombras */
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            border: 1px solid rgba(166, 118, 101, 0.1); /* Borde sutil marrón */
+            min-height: 400px;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* 2. TOOLTIP D3.js: Estilizado con marrón oscuro */
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 10px 15px;
+            font-size: 13px;
+            background: var(--text-main); /* Marrón oscuro */
+            color: #fff;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 3. BOTONES DE PESTAÑAS (Sobrescribir azul de Bootstrap) */
+        .btn-group .btn {
+            border-radius: 50px !important; /* Más redondos */
+            padding: 8px 25px;
+            margin: 0 5px; /* Separados un poco */
+            font-weight: 600;
+            border: 1px solid var(--brand-primary);
+        }
+
+        /* Botón Activo: Color Rust */
+        .btn-check:checked + .btn, .btn.active, .btn.show, .btn:first-child:active, :not(.btn-check) + .btn:active {
+            background-color: var(--brand-primary) !important;
+            border-color: var(--brand-primary) !important;
+            color: white !important;
+        }
+
+        /* Botón Inactivo: Transparente con texto Rust */
+        .btn-outline-primary {
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
+            background-color: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--brand-hover); /* Coral al hover */
+            border-color: var(--brand-hover);
+            color: white;
+        }
+
+        .d-none-custom { display: none !important; }
+    </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">
+            <span class="brand-animate">Lookiero Dashboard</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link active" href="charts.html">Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link" href="reglas.html">Reglas</a></li>
+            <li class="nav-item"><a class="nav-link" href="wheel2.html">Colores</a></li>
+            <li class="nav-item"><a class="nav-link" href="bigdata.html">Generador AI</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section class="py-5">
+      <div class="container">
+        
+        <div class="d-flex justify-content-center mb-5">
+            <div class="btn-group" role="group" aria-label="Selector de gráficos">
+                <button type="button" class="btn btn-outline-primary active tab-btn" data-target="section-onboarding">
+                    Análisis Onboarding
+                </button>
+                <button type="button" class="btn btn-outline-primary tab-btn" data-target="section-prendas">
+                    Prendas & Inventario
+                </button>
+                <button type="button" class="btn btn-outline-primary tab-btn" data-target="section-looklike">
+                    Look & Like
+                </button>
+            </div>
+        </div>
+
+        <div id="section-onboarding" class="view-section">
+            <h2 class="mb-2 text-center fw-bold">Análisis de Comportamiento</h2>
+            <p class="text-center text-muted mb-5" style="color: var(--text-secondary) !important;">
+                Métricas de fricción y tiempos de respuesta en el flujo de entrada.
+            </p>
+            
+            <div class="row g-4">
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">⏱️ Tiempo medio por Paso</h5>
+                        <div id="timeChart"></div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">🔙 Tasa de Retroceso</h5>
+                        <div id="backtrackChart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-prendas" class="view-section d-none-custom">
+            <h2 class="mb-2 text-center fw-bold">Análisis de Prendas</h2>
+            <p class="text-center mb-5" style="color: var(--text-secondary);">
+                Exploración de inventario: Relación entre tipos, colores y ajuste.
+            </p>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="chart-container p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                             <h5 class="fw-bold mb-0" style="color: var(--brand-primary)">Mapa de Tipos de Prenda</h5>
+                             <small style="color: var(--text-secondary)">Tamaño burbuja = Variedad | Eje X = Longitud</small>
+                        </div>
+                        <div id="bubble-chart" style="width: 100%; height: 450px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-lg-7">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">🎨 Top 10 Colores</h5>
+                        <div id="bar-chart" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-5">
+                    <div class="chart-container p-4">
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">📐 Distribución por "Fit"</h5>
+                        <div id="donut-chart" class="d-flex justify-content-center" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-looklike" class="view-section d-none-custom">
+            <h2 class="mb-2 text-center fw-bold">Look & Like</h2>
+            <p class="text-center mb-5" style="color: var(--text-secondary);">
+                Preferencias de usuario y patrones de likes.
+            </p>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="chart-container p-4 d-flex align-items-center justify-content-center flex-column">
+                        <div style="font-size: 3rem; color: var(--brand-nude-dark);">📊</div>
+                        <p class="mt-3" style="color: var(--text-secondary);">Esperando conexión de datos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      </div>
+    </section>
+
+    <footer class="bg-light py-4 mt-5 text-center">
+      <p class="mb-0">&copy; 2026 Lookiero Dashboard</p>
+    </footer>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/static/graficos_ux.js"></script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lookiero Dashboard - Generador AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <style>
+        .color-swatch-container {
+            display: flex; flex-wrap: wrap; gap: 8px; max-height: 250px; overflow-y: auto;
+            padding: 10px; background: #fff; border: 1px solid #dee2e6; border-radius: 6px;
+        }
+        .btn-check-color { position: absolute; clip: rect(0,0,0,0); pointer-events: none; }
+        .color-label {
+            width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+            border: 2px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .color-label:hover { transform: scale(1.15); z-index: 2; border-color: #999;}
+        .btn-check-color:checked + .color-label {
+            border-color: #000; transform: scale(1.2); box-shadow: 0 0 0 3px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="index.html">Lookiero Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="charts.html">Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link" href="reglas.html">Reglas</a></li>
+            <li class="nav-item"><a class="nav-link" href="wheel2.html">Colores</a></li>
+            <li class="nav-item"><a class="nav-link active" href="bigdata.html">Generador AI</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow border-0">
+                    <div class="card-body p-5">
+                        <form action="/enviar" method="POST">
+                            <div class="row g-4">
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">1. NIVEL</label>
+                                    <select class="form-select" name="nivel" id="selectorNivel" onchange="actualizarCategorias()" required>
+                                        <option value="" selected disabled>Seleccionar Nivel...</option>
+                                        <option value="1">Nivel 1 (Inferior/Full)</option>
+                                        <option value="2">Nivel 2 (Superior)</option>
+                                        <option value="3">Nivel 3 (Accesorios/Capas)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">2. CATEGORÍA</label>
+                                    <select class="form-select" name="sub_category" id="selectorCategoria" onchange="actualizarTallas()" disabled required>
+                                        <option value="" selected disabled>← Elige Nivel primero</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">3. TALLA</label>
+                                    <select class="form-select" name="talla" id="selectorTalla" disabled required>
+                                        <option value="" selected disabled>← Elige Categoría</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">TIEMPO</label>
+                                    <select class="form-select" name="tiempo">
+                                        {% for t in data.tiempo %}
+                                            <option value="{{t}}">{{t|capitalize}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">ESTILO</label>
+                                    <select class="form-select" name="style">
+                                        {% for s in data.styles %}
+                                            <option value="{{s}}">{{s|capitalize}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-muted">FIT</label>
+                                    <select class="form-select" name="fit">
+                                        {% for f in data.fits %}
+                                            <option value="{{f}}">{{f|capitalize}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small text-muted">PRINT (Estampado)</label>
+                                    <select class="form-select" name="print">
+                                        {% for p in data.prints %}
+                                            <option value="{{p}}">{{p|replace('_', ' ')|capitalize}}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small text-muted d-flex justify-content-between align-items-center">
+                                        <span>COLOR BASE ({{ colores|length }} Opciones)</span>
+                                        <span id="selected-color-name" class="badge bg-dark">Selecciona...</span>
+                                    </label>
+                                    <div class="color-swatch-container">
+                                        {% for nombre, info in colores.items() %}
+                                            <input type="radio" class="btn-check-color" name="color" id="c_{{nombre}}" value="{{nombre}}" required>
+                                            <label class="color-label" for="c_{{nombre}}" 
+                                                   style="background-color: {{info.hex}};" 
+                                                   title="{{nombre|capitalize}}"
+                                                   onclick="document.getElementById('selected-color-name').innerText = '{{nombre|upper}}'">
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                            </div>
+                            <hr class="my-4">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg fw-bold shadow">
+                                    ENVIAR A RED NEURONAL 🚀
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </section>
+    
+    <footer class="bg-light py-4 mt-5 text-center">
+      <p class="mb-0">&copy; 2026 Lookiero Dashboard</p>
+    </footer>
+
+    <script>
+        // RECIBIMOS TODAS LAS TALLAS (Incluida UNQ)
+        const tallasTodas = {{ tallas.keys() | list | tojson }};
+        
+        // ORDEN PERSONALIZADO (XS -> 4XL -> UNQ)
+        const ordenTallas = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'X4XL', 'UNQ'];
+        
+        tallasTodas.sort((a, b) => {
+            return ordenTallas.indexOf(a) - ordenTallas.indexOf(b);
+        });
+
+        const categoriasPorNivel = {
+            '1': ['pantalones', 'vestido', 'falda', 'mono', 'mono_corto'],
+            '2': ['camiseta', 'jersey'],
+            '3': ['bolso', 'bufanda', 'chaqueta'] // Jersey aquí
+        };
+
+        const categoriasSoloUNQ = ['bolso', 'bufanda']; // Jersey NO está aquí
+
+        function actualizarCategorias() {
+            const nivelSelect = document.getElementById('selectorNivel');
+            const catSelect = document.getElementById('selectorCategoria');
+            const tallaSelect = document.getElementById('selectorTalla');
+            
+            const nivelElegido = nivelSelect.value;
+            catSelect.innerHTML = '<option value="" selected disabled>Seleccionar Categoría...</option>';
+            tallaSelect.innerHTML = '<option value="" selected disabled>← Elige Categoría primero</option>';
+            tallaSelect.disabled = true;
+
+            if (categoriasPorNivel[nivelElegido]) {
+                catSelect.disabled = false;
+                categoriasPorNivel[nivelElegido].forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    option.text = cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ');
+                    catSelect.appendChild(option);
+                });
+            } else {
+                catSelect.disabled = true;
+            }
+        }
+
+        function actualizarTallas() {
+            const catSelect = document.getElementById('selectorCategoria');
+            const tallaSelect = document.getElementById('selectorTalla');
+            
+            const categoria = catSelect.value;
+            tallaSelect.disabled = false;
+            tallaSelect.innerHTML = '';
+
+            // CASO 1: Solo UNQ (Bolso/Bufanda)
+            if (categoriasSoloUNQ.includes(categoria)) {
+                const option = document.createElement('option');
+                option.value = 'UNQ';
+                option.text = 'UNQ (Talla Única)';
+                option.selected = true;
+                tallaSelect.appendChild(option);
+            } 
+            // CASO 2: Todo (Ropa + UNQ)
+            else {
+                const defaultOpt = document.createElement('option');
+                defaultOpt.text = "Seleccionar Talla...";
+                defaultOpt.value = "";
+                defaultOpt.selected = true;
+                defaultOpt.disabled = true;
+                tallaSelect.appendChild(defaultOpt);
+
+                // Mostramos TODAS las tallas disponibles (incluyendo UNQ)
+                tallasTodas.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t;
+                    option.text = t;
+                    tallaSelect.appendChild(option);
+                });
+            }
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

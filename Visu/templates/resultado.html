@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado del Look - Lookiero AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <style>
+        body { background-color: var(--bg-body); min-height: 100vh; display: flex; flex-direction: column; }
+        .fade-in { animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .garment-card {
+            background: white; border: 1px solid rgba(166, 118, 101, 0.15);
+            border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+            transition: all 0.3s ease; overflow: hidden; position: relative;
+        }
+        .garment-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-soft); border-color: var(--brand-primary); }
+        .garment-header {
+            background-color: var(--brand-nude); padding: 12px; text-align: center;
+            font-weight: 700; color: var(--text-main); text-transform: uppercase;
+            letter-spacing: 1px; font-size: 0.85rem;
+        }
+        .user-card { border: 2px solid var(--text-main); }
+        .user-card .garment-header { background-color: var(--text-main); color: white; }
+        .garment-body { padding: 25px 20px; text-align: center; }
+        .garment-subtitle { font-size: 0.95rem; color: var(--text-secondary); margin-top: 5px; font-weight: 500; }
+        
+        .btn-details {
+            font-size: 0.8rem; color: var(--brand-primary); background: none;
+            border: 1px solid var(--brand-primary); border-radius: 20px; padding: 5px 15px;
+            margin-top: 15px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-details:hover { background-color: var(--brand-primary); color: white; }
+
+        .details-box {
+            background-color: #fff8f6; padding: 15px 25px; font-size: 0.85rem;
+            color: var(--text-secondary); border-top: 1px dashed rgba(0,0,0,0.1); text-align: left;
+        }
+        .details-box ul { margin: 0; padding: 0; list-style: none; }
+        .details-box li { margin-bottom: 6px; display: flex; justify-content: space-between; }
+        .details-box li strong { color: var(--text-main); }
+        
+        #loading-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5 flex-grow-1 position-relative">
+        
+        <div id="loading-screen">
+            <div class="spinner-border" style="color: var(--brand-primary); width: 4rem; height: 4rem;" role="status"></div>
+            <h3 class="mt-4 fw-bold" style="color: var(--text-main)">Analizando Grafo de Estilo...</h3>
+            <p class="text-muted">Nuestra IA (GNN) está buscando las mejores conexiones.</p>
+        </div>
+
+        <div id="result-container" style="display: none;" class="fade-in">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold display-5" style="color: var(--text-main)">Tu Look Ideal</h2>
+                <p class="lead text-muted">Hemos generado esta combinación basada en tu selección.</p>
+            </div>
+
+            <div class="row justify-content-center mb-5">
+                <div class="col-md-6 col-lg-4">
+                    <div class="garment-card user-card shadow">
+                        <div class="garment-header">Tu Elección Base</div>
+                        <div class="garment-body">
+                            <h3 class="fw-bold mb-1" id="user-cat">...</h3>
+                            <p class="garment-subtitle" id="user-color-text">...</p>
+                            <button class="btn-details" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUser">
+                                Ver detalles técnicos <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="collapseUser">
+                            <div class="details-box"><ul id="user-details-list"></ul></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center g-4">
+                <div class="col-md-5 col-lg-4">
+                    <div class="garment-card">
+                        <div class="garment-header">Combina con</div>
+                        <div class="garment-body">
+                            <h4 class="fw-bold mb-1" id="rec1-cat" style="color: var(--brand-primary);">...</h4>
+                            <p class="garment-subtitle" id="rec1-color-text">...</p>
+                            <button class="btn-details" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRec1">
+                                + info <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="collapseRec1">
+                            <div class="details-box"><ul id="rec1-details-list"></ul></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-5 col-lg-4">
+                    <div class="garment-card">
+                        <div class="garment-header">Completa el look</div>
+                        <div class="garment-body">
+                            <h4 class="fw-bold mb-1" id="rec2-cat" style="color: var(--brand-primary);">...</h4>
+                            <p class="garment-subtitle" id="rec2-color-text">...</p>
+                            <button class="btn-details" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRec2">
+                                + info <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="collapseRec2">
+                            <div class="details-box"><ul id="rec2-details-list"></ul></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-5 pt-4">
+                <a href="bigdata.html" class="btn btn-primary btn-lg px-5 shadow me-3">Nuevo Look</a>
+                <a href="/" class="btn btn-outline-secondary btn-lg px-4">Volver al Dashboard</a>
+            </div>
+        </div> 
+    </div>
+
+    <footer style="background-color: var(--text-main); color: var(--brand-nude); padding: 40px 0;" class="text-center mt-auto">
+        <p class="mb-0" style="opacity: 0.8;">&copy; 2026 Lookiero AI Styling Engine</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function renderCard(prefix, itemData) {
+            // Protección contra nulos
+            const safe = (val) => val ? val : '-';
+
+            // 1. PRINCIPAL
+            document.getElementById(prefix + '-cat').innerText = (itemData.category || 'PRENDA').toUpperCase();
+            
+            let tallaStr = (itemData.talla && itemData.talla !== '0') ? itemData.talla : 'Única';
+            let colorStr = itemData.color || 'NEUTRO';
+            document.getElementById(prefix + '-color-text').innerText = `${colorStr}  |  Talla: ${tallaStr}`;
+            
+            // 2. DETALLES
+            const list = document.getElementById(prefix + '-details-list');
+            list.innerHTML = `
+                <li><strong>Estilo:</strong> <span>${safe(itemData.style)}</span></li>
+                <li><strong>Fit:</strong> <span>${safe(itemData.fit)}</span></li>
+                <li><strong>Print:</strong> <span>${safe(itemData.print)}</span></li>
+                <li style="border-top: 1px solid #eee; margin: 8px 0;"></li>
+                <li><strong>Tiempo:</strong> <span>${safe(itemData.tiempo)}</span></li>
+                <li><strong>Nivel:</strong> <span>${safe(itemData.nivel)}</span></li>
+            `;
+        }
+
+        function checkResult() {
+            fetch('/static/resultado_ia.json?t=' + Date.now())
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("Esperando...");
+                })
+                .then(json => {
+                    const data = json.data;
+                    renderCard('user', data.user_item);
+                    renderCard('rec1', data.rec_1);
+                    renderCard('rec2', data.rec_2);
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('result-container').style.display = 'block';
+                })
+                .catch(err => {
+                    console.log("Polling IA...");
+                    setTimeout(checkResult, 1500);
+                });
+        }
+        checkResult();
+    </script>
+</body>
+</html>
