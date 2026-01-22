@@ -155,4 +155,4 @@ def enviar():
     return render_template('resultado.html', datos=datos_finales['display'])
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000) 
