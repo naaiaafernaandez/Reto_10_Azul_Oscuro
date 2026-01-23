@@ -105,9 +105,12 @@ def reglas(): return render_template('reglas.html')
 @app.route('/wheel2.html')
 def wheel(): return render_template('wheel2.html')
 
+@app.route('/ejemplos.html')
+def ejemplos():
+    return render_template('ejemplos.html')
+
 @app.route('/bigdata.html')
 def generator():
-    # Pasamos datos limpios a la vista
     return render_template('bigdata.html', 
                            tallas=MAPA_TALLAS, 
                            colores=COLORES_INFO, 
@@ -155,4 +158,4 @@ def enviar():
     return render_template('resultado.html', datos=datos_finales['display'])
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    app.run(debug=True, port=5000)

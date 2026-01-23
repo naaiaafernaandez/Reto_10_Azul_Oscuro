@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lookiero Dashboard - Generador AI</title>
+    <title>Lookiero  - Generador AI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
  
     <style>
+        /* Ajuste para que el fondo sea coherente con el body */
+        body { background-color: var(--bg-body); }
+
         .color-swatch-container {
             display: flex; flex-wrap: wrap; gap: 8px; max-height: 250px; overflow-y: auto;
             padding: 10px; background: #fff; border: 1px solid #dee2e6; border-radius: 6px;
@@ -28,7 +31,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
       <div class="container">
-        <a class="navbar-brand fw-bold" href="index.html">Lookiero Dashboard</a>
+        <a class="navbar-brand fw-bold" href="index.html">Lookiero</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -37,13 +40,14 @@
             <li class="nav-item"><a class="nav-link" href="charts.html">Gráficos</a></li>
             <li class="nav-item"><a class="nav-link" href="reglas.html">Reglas</a></li>
             <li class="nav-item"><a class="nav-link" href="wheel2.html">Colores</a></li>
+            <li class="nav-item"><a class="nav-link" href="ejemplos.html">Ejemplos Looks</a></li>
             <li class="nav-item"><a class="nav-link active" href="bigdata.html">Generador AI</a></li>
           </ul>
         </div>
       </div>
     </nav>
 
-    <section class="py-5 bg-light">
+    <section class="py-5" style="background-color: var(--bg-body);">
       <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-10">
@@ -145,7 +149,7 @@
     </section>
     
     <footer class="bg-light py-4 mt-5 text-center">
-      <p class="mb-0">&copy; 2026 Lookiero Dashboard</p>
+      <p class="mb-0">&copy; 2026 Lookiero Azul Oscuro</p>
     </footer>
 
     <script>
@@ -162,10 +166,10 @@
         const categoriasPorNivel = {
             '1': ['pantalones', 'vestido', 'falda', 'mono', 'mono_corto'],
             '2': ['camiseta', 'jersey'],
-            '3': ['bolso', 'bufanda', 'chaqueta'] // Jersey aquí
+            '3': ['chaqueta'] // Nivel 3 completo
         };
 
-        const categoriasSoloUNQ = ['bolso', 'bufanda']; // Jersey NO está aquí
+        const categoriasSoloUNQ = ['bolso', 'bufanda']; 
 
         function actualizarCategorias() {
             const nivelSelect = document.getElementById('selectorNivel');

@@ -11,9 +11,6 @@ from torch_geometric.utils import from_networkx
 import torch.nn.functional as F
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
-# ==========================================
-# 1. CONFIGURACIÓN
-# ==========================================
 TOPIC_NAME = 'solicitud_look'
 CONF_KAFKA = {
     'bootstrap.servers': 'localhost:9092',
@@ -25,15 +22,11 @@ PATH_GRAFO = "grafo_prendas.gexf"
 PATH_MODELO = "modelo_gnn_1000.pth"
 PATH_RESULTADO = "static/resultado_ia.json"
 
-# ==========================================
-# 2. DEFINICIONES DE NEGOCIO
-# ==========================================
+
 REGLAS_NIVEL = {
     'pantalones': 1, 'jeans': 1, 'shorts': 1, 'leggings': 1, 'falda': 1,
     'vestido': 1, 'mono': 1, 'mono_corto': 1,
-    'camiseta': 2, 't-shirt': 2, 'top': 2, 'blusa': 2, 'camisa': 2, 'sudadera': 2,
-    'jersey': 3, 'bolso': 3, 'bufanda': 3,
-    'chaqueta': 3, 'abrigo': 3, 'cazadora': 3, 'blazer': 3, 'cardigan': 3
+    'camiseta': 2, 'jersey': 2, 'bolso': 3, 'bufanda': 3
 }
 
 GR_ARRIBA = {'camiseta', 'jersey', 't-shirt', 'top', 'blusa', 'camisa', 'sudadera'}
@@ -58,15 +51,11 @@ MAPA_COLORES = {
 }
 ID_A_COLOR = {int(v): k.upper().replace("_", " ") for k, v in MAPA_COLORES.items()}
 
-# DICCIONARIO DE TALLAS
 ID_A_TALLA = {
     1: 'XS', 2: 'S', 3: 'M', 4: 'L', 5: 'XL', 
     6: 'XXL', 7: 'XXXL', 8: 'X4XL', 100: 'UNQ', 0: 'UNQ'
 }
 
-# ==========================================
-# 3. MODELO GNN
-# ==========================================
 class Net(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
         super().__init__()
@@ -77,9 +66,6 @@ class Net(torch.nn.Module):
         x = self.conv2(x, edge_index)
         return x
 
-# ==========================================
-# 4. CARGA DE RECURSOS
-# ==========================================
 print("⚙️ Cargando Grafo y Modelo...")
 if not os.path.exists(PATH_GRAFO): raise FileNotFoundError(f"Falta {PATH_GRAFO}")
 grafo = nx.read_gexf(PATH_GRAFO)
@@ -120,16 +106,12 @@ if os.path.exists(PATH_MODELO):
     print("✅ Modelo IA cargado.")
 model.eval()
 
-# ==========================================
-# 5. FUNCIONES AUXILIARES
-# ==========================================
 
 def get_color_name(val):
     try: return ID_A_COLOR.get(int(float(val)), "NEUTRO")
     except: return str(val).upper()
 
 def get_talla_real(val_id):
-    """Traduce el número (5.0) a Texto (XL)"""
     try:
         id_int = int(float(val_id))
         return ID_A_TALLA.get(id_int, "UNQ") 
@@ -211,15 +193,11 @@ def calcular_peso_combinacion(p1_raw, p2_raw):
         if not s1.isdisjoint(s2): score_style = 2.0 
     return round(score_style + score_tiempo, 2)
 
-# ==========================================
-# 6. LÓGICA PRINCIPAL
-# ==========================================
 
 def procesar_solicitud(display, gcn_in):
-    # 1. User Choice
+    
     user_item_final = format_user_choice(display)
 
-    # 2. Vectorizar
     features = []
     input_data = {
         'sub_category': str(display.get('sub_category', 'camiseta')).lower(),
@@ -244,7 +222,7 @@ def procesar_solicitud(display, gcn_in):
     
     tensor_nuevo = torch.tensor([features], dtype=torch.float)
     
-    # 3. Buscar Gemelo
+    
     dummy_edge = torch.tensor([[],[]], dtype=torch.long)
     z_nuevo = model.encode(tensor_nuevo, dummy_edge)
     z_existente = model.encode(data_grafo.x, data_grafo.edge_index)
@@ -252,7 +230,7 @@ def procesar_solicitud(display, gcn_in):
     _, indices_ordenados = torch.sort(similitudes, descending=True)
     
     cat_objetivo = input_data['sub_category']
-    # IGNORAMOS el nivel objetivo en la búsqueda para evitar conflictos (User:3 vs Grafo:2)
+
     talla_objetivo = int(input_data['talla'])
     color_objetivo = int(input_data['color_nivel'])
     familia_colores = set([(color_objetivo // 10) * 10 + i for i in range(7)])
@@ -261,20 +239,18 @@ def procesar_solicitud(display, gcn_in):
     gemelo_reserva = None
     lista_nodos = list(grafo.nodes(data=True))
     
-    print(f"   🔎 Buscando match para: {cat_objetivo} (Ignorando nivel estricto)...")
+    print(f" - Buscando match para: {cat_objetivo} (Ignorando nivel estricto)...")
     
     for i in range(min(500, len(indices_ordenados))):
         idx = indices_ordenados[i].item()
         nid, attrs = lista_nodos[idx]
         
-        # 1. Filtro Categoría
+        
         if str(attrs.get('sub_category')).lower() != cat_objetivo: continue
         
-        # 2. Filtro Talla
         t_cand = int(float(attrs.get('talla', 0)))
         if not ((talla_objetivo == 100 or t_cand == 100) or abs(talla_objetivo - t_cand) <= 1): continue
         
-        # 3. Filtro Color
         c_cand = int(float(attrs.get('color_nivel', 0)))
         if c_cand == color_objetivo:
             gemelo_exacto = (nid, attrs)
@@ -284,9 +260,9 @@ def procesar_solicitud(display, gcn_in):
             
     gemelo_final = gemelo_exacto if gemelo_exacto else gemelo_reserva
     
-    # Fallback Búsqueda Gemelo (Si falla talla o color, busca solo categoría)
+   
     if not gemelo_final:
-        print("   ⚠️ No match exacto. Usando fallback de categoría...")
+        print(" - No match exacto. Usando fallback de categoría...")
         for i in range(100):
             nid, attrs = lista_nodos[indices_ordenados[i].item()]
             if str(attrs.get('sub_category')).lower() == cat_objetivo:
@@ -294,14 +270,13 @@ def procesar_solicitud(display, gcn_in):
                 break
     
     if not gemelo_final:
-        print("   ⚠️ Fallback Total. Usando Top 1 similitud.")
+        print(" - Fallback Total. Usando Top 1 similitud.")
         nid, attrs = lista_nodos[indices_ordenados[0].item()]
         gemelo_final = (nid, attrs)
 
     gemelo_id, gemelo_attrs = gemelo_final
-    print(f"   👯 Gemelo ID {gemelo_id}: {gemelo_attrs.get('sub_category')}")
+    print(f" - Gemelo ID {gemelo_id}: {gemelo_attrs.get('sub_category')}")
 
-    # 4. RECOMENDADOR
     vecinos = list(grafo.neighbors(gemelo_id))
     validos = []
     
@@ -312,8 +287,7 @@ def procesar_solicitud(display, gcn_in):
         
     mejor_look = None
     mejor_score = -1
-    
-    # Intento 1: Triángulo
+
     for i in range(len(validos)):
         for j in range(i+1, len(validos)):
             cA, cB = validos[i], validos[j]
@@ -333,10 +307,9 @@ def procesar_solicitud(display, gcn_in):
     rec1, rec2 = {}, {}
     if mejor_look:
         rec1, rec2 = format_node_reco(mejor_look[0]), format_node_reco(mejor_look[1])
-        print(f"   ✅ Triángulo (Score: {mejor_score:.2f})")
+        print(f" - Triángulo (Score: {mejor_score:.2f})")
     else:
-        # Intento 2: Buscar en Grafo Global (Para evitar que Nivel 3 sin vecinos se cuelgue)
-        print("   ⚠️ Sin triángulo. Buscando en grafo global...")
+        print(" - Sin triángulo. Buscando en grafo global...")
         target_levels = []
         nivel_G = int(float(gemelo_attrs.get('nivel', 2)))
         if nivel_G == 2: target_levels = [1, 3]
@@ -366,13 +339,10 @@ def procesar_solicitud(display, gcn_in):
 
     return user_item_final, rec1, rec2
 
-# ==========================================
-# 7. BUCLE
-# ==========================================
 consumer = Consumer(CONF_KAFKA)
 consumer.subscribe([TOPIC_NAME])
 print("\n---------------------------------------------------------")
-print(f"🎧 IA LISTA (CORRECCIÓN DE BÚSQUEDA NIVEL 3)")
+print(f"ESPERANDO A QUE EL USUARIO ELIJA UNA PRENDA...")
 print("---------------------------------------------------------")
 
 try:
@@ -382,6 +352,7 @@ try:
         if msg.error(): continue
 
         try:
+            print("-"*60)
             valor_str = msg.value().decode('utf-8')
             paquete = json.loads(valor_str)
             user_item, r1, r2 = procesar_solicitud(paquete.get('display', {}), paquete.get('gcn_input', {}))
@@ -391,12 +362,15 @@ try:
             if not os.path.exists("static"): os.makedirs("static")
             with open(PATH_RESULTADO, "w") as f:
                 json.dump({"status": "success", "data": resultado}, f)
-            print("   💾 Resultado guardado.")
-                
+            print(" ✅ Resultado guardado.")
+            print("-"*60)
+
+            print("\n---------------------------------------------------------")
+            print(f"ESPERANDO A QUE EL USUARIO ELIJA OTRA PRENDA...")
+            print("---------------------------------------------------------")
+            
         except Exception as e:
-            print(f"⚠️ Error: {e}")
+            print(f"Error: {e}")
             import traceback
             traceback.print_exc()
-
 except KeyboardInterrupt: pass
- 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lookiero Dashboard - Gráficos</title>
+    <title>Lookiero - Gráficos</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -80,7 +80,7 @@
   <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
       <div class="container">
         <a class="navbar-brand fw-bold" href="index.html">
-            <span class="brand-animate">Lookiero Dashboard</span>
+            <span>Lookiero</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -90,6 +90,7 @@
             <li class="nav-item"><a class="nav-link active" href="charts.html">Gráficos</a></li>
             <li class="nav-item"><a class="nav-link" href="reglas.html">Reglas</a></li>
             <li class="nav-item"><a class="nav-link" href="wheel2.html">Colores</a></li>
+            <li class="nav-item"><a class="nav-link" href="ejemplos.html">Ejemplos Looks</a></li>
             <li class="nav-item"><a class="nav-link" href="bigdata.html">Generador AI</a></li>
           </ul>
         </div>
@@ -122,13 +123,13 @@
             <div class="row g-4">
                 <div class="col-12 col-lg-6">
                     <div class="chart-container p-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">⏱️ Tiempo medio por Paso</h5>
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">Tiempo medio por Paso</h5>
                         <div id="timeChart"></div>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6">
                     <div class="chart-container p-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">🔙 Tasa de Retroceso</h5>
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">Tasa de Retroceso</h5>
                         <div id="backtrackChart"></div>
                     </div>
                 </div>
@@ -156,13 +157,13 @@
             <div class="row g-4">
                 <div class="col-12 col-lg-7">
                     <div class="chart-container p-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">🎨 Top 10 Colores</h5>
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">Top 10 Colores</h5>
                         <div id="bar-chart" style="width: 100%; height: 300px;"></div>
                     </div>
                 </div>
                 <div class="col-12 col-lg-5">
                     <div class="chart-container p-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">📐 Distribución por "Fit"</h5>
+                        <h5 class="fw-bold mb-3" style="color: var(--brand-primary)">Distribución por "Fit"</h5>
                         <div id="donut-chart" class="d-flex justify-content-center" style="width: 100%; height: 300px;"></div>
                     </div>
                 </div>
@@ -188,7 +189,7 @@
     </section>
 
     <footer class="bg-light py-4 mt-5 text-center">
-      <p class="mb-0">&copy; 2026 Lookiero Dashboard</p>
+      <p class="mb-0">&copy; 2026 Lookiero Azul Oscuro</p>
     </footer>
 
     <div id="tooltip" class="tooltip"></div>

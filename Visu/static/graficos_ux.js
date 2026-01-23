@@ -11,7 +11,8 @@ const PALETA = {
     secondary: "#a67665", // Marrón medio
     accent:    "#f29b88", // Peach
     dark:      "#593831", // Marrón oscuro
-    highlight: "#c75551"  // Coral
+    highlight: "#c75551", // Coral
+    empty:     "#f3f4f6"  // Gris muy claro para valores 0
 };
 
 // ==========================================
@@ -56,7 +57,6 @@ function loadOnboardingCharts() {
         d3.csv("/static/backtrack_stats.csv")
     ]).then(([timeData, backtrackData]) => {
         
-        // --- FUNCIÓN PARA LIMPIAR NOMBRES ---
         const formatName = (name) => {
             if (!name) return "";
             let clean = name.replace("quiz_", "");
@@ -201,7 +201,6 @@ if (btnLookLike) {
 function loadLookLikeCharts() {
     d3.csv("/static/look_like_short.csv").then(data => {
         const parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S.%f");
-        
         data.forEach(d => {
             d.date = parseDate(d.occurred_on_);
             d.date_day = d3.timeDay(d.date); 
@@ -221,19 +220,18 @@ function loadLookLikeCharts() {
         const sectionContainer = document.getElementById("section-looklike");
         if(sectionContainer && sectionContainer.innerHTML.includes("Esperando")) {
             sectionContainer.innerHTML = `
-                <h2 class="mb-2 text-center fw-bold" style="color:${PALETA.dark}">Look & Like (Q1 2025)</h2>
+                <h2 class="mb-2 text-center fw-bold" style="color:${PALETA.dark}">Look & Like</h2>
                 <p class="text-center mb-4" style="color:${PALETA.secondary}">Análisis de interacciones.</p>
-                
                 <div class="row g-4 mb-4">
                     <div class="col-12 col-lg-8">
                         <div class="chart-container p-4">
-                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Top Familias</h5>
+                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Top Prendas por Categoría</h5>
                             <div id="familyChart"></div>
                         </div>
                     </div>
                     <div class="col-12 col-lg-4">
                         <div class="chart-container p-4">
-                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Mercados</h5>
+                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Interacciones por País</h5>
                             <div id="marketChart"></div>
                         </div>
                     </div>
@@ -247,11 +245,9 @@ function loadLookLikeCharts() {
                     </div>
                 </div>
             `;
-            
             drawFamilyChart(familyData);
             drawMarketChart(marketData);
             drawTimelineChart(timeData);
-
             window.addEventListener("resize", () => {
                 if(!document.getElementById("section-looklike").classList.contains("d-none-custom")){
                     drawFamilyChart(familyData);
@@ -269,28 +265,55 @@ function drawFamilyChart(data) {
     const localMargin = { top: 20, right: 30, bottom: 40, left: 100 };
     
     d3.select(`#${containerId}`).html("");
-
     const svg = d3.select(`#${containerId}`).append("svg")
         .attr("width", width + localMargin.left + localMargin.right)
         .attr("height", 300 + localMargin.top + localMargin.bottom)
         .append("g").attr("transform", `translate(${localMargin.left},${localMargin.top})`);
 
+    // === FUNCIÓN DE FORMATO DE ETIQUETAS ===
+    const formatFamily = (name) => {
+        if(!name) return "";
+        const lower = name.toLowerCase();
+        const map = {
+            'blusa_camisa': 'Camisa/Blusa',
+            'camisa': 'Camisa',
+            'camiseta': 'Camiseta',
+            'pantalones': 'Pantalón',
+            'pantalon': 'Pantalón',
+            'jeans': 'Jeans',
+            'vestido': 'Vestido',
+            'falda': 'Falda',
+            'chaqueta': 'Chaqueta',
+            'abrigo': 'Abrigo',
+            'jersey': 'Jersey',
+            'cardigan': 'Cárdigan',
+            'top': 'Top',
+            'mono': 'Mono',
+            'mono_corto': 'Mono Corto',
+            'bolso': 'Bolso',
+            'bufanda': 'Bufanda',
+            'calzado': 'Calzado',
+            'accesorios': 'Accesorios'
+        };
+        // Si está en el mapa, úsalo. Si no, quita guiones y capitaliza.
+        return map[lower] || lower.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    };
+
     const x = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).range([0, width]);
     const y = d3.scaleBand().range([0, 300]).domain(data.map(d => d.family)).padding(0.2);
 
     svg.append("g").attr("transform", `translate(0,300)`).call(d3.axisBottom(x).ticks(5));
-    svg.append("g").call(d3.axisLeft(y)).selectAll("text").style("fill", PALETA.dark);
+    
+    // Aplicamos el formateador al eje Y
+    svg.append("g").call(d3.axisLeft(y).tickFormat(formatFamily))
+       .selectAll("text").style("fill", PALETA.dark).style("font-size", "12px");
 
     svg.selectAll("rect").data(data).join("rect")
-        .attr("x", x(0))
-        .attr("y", d => y(d.family))
-        .attr("width", d => x(d.count))
-        .attr("height", y.bandwidth())
-        .attr("fill", PALETA.secondary) 
-        .attr("rx", 3)
+        .attr("x", x(0)).attr("y", d => y(d.family)).attr("width", d => x(d.count)).attr("height", y.bandwidth())
+        .attr("fill", PALETA.secondary).attr("rx", 3)
         .on("mouseover", (event, d) => {
             d3.select(event.currentTarget).attr("fill", PALETA.highlight);
-            tooltip.style("opacity", 1).html(`<strong>${d.family}</strong>: ${d.count}`)
+            tooltip.style("opacity", 1).html(`<strong>${formatFamily(d.family)}</strong>: ${d.count}`)
                 .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", (e) => {
@@ -303,39 +326,28 @@ function drawMarketChart(data) {
     const containerId = "marketChart";
     const container = document.getElementById(containerId);
     if (!container) return;
-
     const containerWidth = container.clientWidth;
     const height = 300;
     const radius = Math.min(containerWidth, height) / 2 - 10;
-
     d3.select(`#${containerId}`).html("");
-
     const svg = d3.select(`#${containerId}`).append("svg")
         .attr("width", containerWidth).attr("height", height)
         .append("g").attr("transform", `translate(${containerWidth / 2},${height / 2})`);
-
     const color = d3.scaleOrdinal().range([PALETA.primary, PALETA.secondary, PALETA.accent, PALETA.dark, "#dba598"]);
-    
     const pie = d3.pie().value(d => d.count).sort(null);
     const arc = d3.arc().innerRadius(radius * 0.5).outerRadius(radius * 0.9);
     const arcHover = d3.arc().innerRadius(radius * 0.5).outerRadius(radius * 1);
-
     svg.selectAll('path').data(pie(data)).join('path')
-        .attr('d', arc)
-        .attr('fill', d => color(d.data.market))
-        .attr("stroke", "white")
-        .style("stroke-width", "2px")
+        .attr('d', arc).attr('fill', d => color(d.data.market)).attr("stroke", "white").style("stroke-width", "2px")
         .on("mouseover", function(event, d) {
             d3.select(this).transition().duration(200).attr("d", arcHover);
-            tooltip.style("opacity", 1)
-                .html(`<strong>${d.data.market}</strong><br>${d.data.count} usuarios`)
+            tooltip.style("opacity", 1).html(`<strong>${d.data.market}</strong><br>${d.data.count} usuarios`)
                 .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", function() {
             d3.select(this).transition().duration(200).attr("d", arc);
             tooltip.style("opacity", 0);
         });
-
     const total = d3.sum(data, d => d.count);
     svg.append("text").attr("text-anchor", "middle").attr("dy", "-0.2em").style("font-size", "22px").style("font-weight", "bold").style("fill", PALETA.dark).text(d3.format(".2s")(total));
     svg.append("text").attr("text-anchor", "middle").attr("dy", "1.2em").style("font-size", "11px").style("fill", PALETA.secondary).text("TOTAL");
@@ -346,63 +358,31 @@ function drawTimelineChart(data) {
     const width = getWidth(containerId);
     const height = 250;
     const margin = { top: 20, right: 30, bottom: 30, left: 50 };
-
     d3.select(`#${containerId}`).html("");
-
     const svg = d3.select(`#${containerId}`).append("svg")
         .attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom)
         .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
     const x = d3.scaleTime().domain(d3.extent(data, d => d.date)).range([0, width]);
     const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).range([height, 0]);
-
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(5));
     svg.append("g").call(d3.axisLeft(y));
-
-    // Área
     const area = d3.area().x(d => x(d.date)).y0(height).y1(d => y(d.count)).curve(d3.curveMonotoneX);
     svg.append("path").datum(data).attr("fill", PALETA.accent).attr("opacity", 0.4).attr("d", area);
-
-    // Línea
     const line = d3.line().x(d => x(d.date)).y(d => y(d.count)).curve(d3.curveMonotoneX);
     svg.append("path").datum(data).attr("fill", "none").attr("stroke", PALETA.primary).attr("stroke-width", 2).attr("d", line);
-
-    // INTERACTIVIDAD (PUNTOS)
-    svg.selectAll(".dot")
-        .data(data)
-        .enter()
-        .append("circle")
-        .attr("cx", d => x(d.date))
-        .attr("cy", d => y(d.count))
-        .attr("r", 4) // Radio base
-        .attr("fill", PALETA.secondary)
-        .attr("stroke", "white")
-        .attr("stroke-width", 2)
-        .style("opacity", 0) // INVISIBLE POR DEFECTO
+    svg.selectAll(".dot").data(data).enter().append("circle")
+        .attr("cx", d => x(d.date)).attr("cy", d => y(d.count)).attr("r", 4)
+        .attr("fill", PALETA.secondary).attr("stroke", "white").attr("stroke-width", 2).style("opacity", 0)
         .on("mouseover", function(event, d) {
-            d3.select(this)
-                .transition().duration(100)
-                .attr("r", 7) // Crece
-                .style("opacity", 1) // Se hace visible
-                .attr("fill", PALETA.highlight);
-            
-            tooltip.style("opacity", 1)
-                // Formato de fecha legible
-                .html(`<strong>Fecha:</strong> ${d3.timeFormat("%d/%m/%Y")(d.date)}<br><strong>Interacciones:</strong> ${d.count}`)
-                .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px");
+            d3.select(this).transition().duration(100).attr("r", 7).style("opacity", 1).attr("fill", PALETA.highlight);
+            tooltip.style("opacity", 1).html(`<strong>Fecha:</strong> ${d3.timeFormat("%d/%m/%Y")(d.date)}<br><strong>Interacciones:</strong> ${d.count}`)
+                .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
         })
         .on("mouseout", function() {
-            d3.select(this)
-                .transition().duration(100)
-                .attr("r", 4)
-                .style("opacity", 0) // Vuelve a ser invisible
-                .attr("fill", PALETA.secondary);
-            
+            d3.select(this).transition().duration(100).attr("r", 4).style("opacity", 0).attr("fill", PALETA.secondary);
             tooltip.style("opacity", 0);
         });
 }
-
 
 // ==========================================
 //    SECCIÓN 3: PRENDAS (INVENTARIO)
@@ -411,8 +391,7 @@ function drawTimelineChart(data) {
 const btnPrendas = document.querySelector('[data-target="section-prendas"]');
 if (btnPrendas) {
     btnPrendas.addEventListener('click', () => {
-        const container = document.getElementById("scatterChart");
-        if (container) container.innerHTML = ""; 
+        const container = document.getElementById("section-prendas");
         loadPrendasCharts();
     });
 }
@@ -420,51 +399,68 @@ if (btnPrendas) {
 function loadPrendasCharts() {
     d3.csv("/static/df_limpio.csv").then(data => {
         
-        // 1. SCATTER PLOT (2 VARIABLES NUMÉRICAS + NIVEL)
-        const scatterRollup = d3.rollup(data, 
-            v => ({
-                count: v.length, // Variable Y: Popularidad (Numérica)
-                avgLength: d3.mean(v, d => +d.long_cm1 || 0), // Variable X: Longitud (Numérica)
-            }), 
-            d => d.style1, d => d.nivel 
-        );
+        // --- 1. PREPARAR DATOS HEATMAP (RELLENO DE CEROS) ---
+        const heatmapRollup = d3.rollup(data, v => v.length, d => d.tipo_prenda2, d => d.style1);
+        
+        const allTypes = Array.from(new Set(data.map(d => d.tipo_prenda2).filter(d => d))).sort();
+        const allStyles = Array.from(new Set(data.map(d => d.style1).filter(d => d && d !== "nan"))).sort();
 
-        let scatterData = [];
-        scatterRollup.forEach((levelsMap, style) => {
-            levelsMap.forEach((stats, nivel) => {
-                if (stats.avgLength > 0 && stats.count > 5) {
-                    scatterData.push({ 
-                        style: style, 
-                        nivel: nivel, 
-                        length: stats.avgLength, 
-                        count: stats.count 
-                    });
-                }
+        let heatmapData = [];
+        allTypes.forEach(type => {
+            allStyles.forEach(style => {
+                const val = heatmapRollup.get(type)?.get(style) || 0;
+                heatmapData.push({ group: type, variable: style, value: val });
             });
         });
 
-        // 2. Colores
+        // --- 2. PREPARAR DATOS COLORES ---
         const colorRollup = d3.rollup(data, v => v.length, d => d.Color);
-        let colorData = Array.from(colorRollup, ([key, value]) => ({ color: key, count: value })).sort((a, b) => b.count - a.count).slice(0, 12); 
+        let colorData = Array.from(colorRollup, ([key, value]) => ({ color: key, count: value }))
+            .sort((a, b) => b.count - a.count).slice(0, 15);
+
+        // --- 3. DATOS FIT ---
+        const fitRollup = d3.rollup(data, v => v.length, d => d.fit1);
+        let fitData = Array.from(fitRollup, ([key, value]) => ({ fit: key, count: value }))
+            .filter(d => d.fit && d.fit !== "nan");
+
+        // --- 4. DATOS WEATHER ---
+        const weatherRollup = d3.rollup(data, v => v.length, d => d.weather);
+        let weatherData = Array.from(weatherRollup, ([key, value]) => ({ weather: key, count: value }))
+            .filter(d => d.weather && d.weather !== "nan");
 
         const sectionContainer = document.getElementById("section-prendas");
-        if(sectionContainer && !document.getElementById("scatterChart")) {
+        if(sectionContainer) {
             sectionContainer.innerHTML = `
-                <h2 class="mb-2 text-center fw-bold" style="color:${PALETA.dark}">Inventario</h2>
-                <p class="text-center mb-4" style="color:${PALETA.secondary}">Longitud vs Popularidad.</p>
+                <h2 class="mb-2 text-center fw-bold" style="color:${PALETA.dark}">Inventario Inteligente</h2>
+                <p class="text-center mb-4" style="color:${PALETA.secondary}">Análisis de Stock, Estilos y Ajustes</p>
                 <div class="row g-4 mb-4">
                     <div class="col-12">
                         <div class="chart-container p-4">
-                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Relación Longitud vs Ventas</h5>
-                            <div id="scatterChart"></div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0" style="color:${PALETA.primary}">Mapa de Estilos</h5>
+                                <small class="text-muted">Densidad por Estilo y Tipo</small>
+                            </div>
+                            <div id="heatmapChart"></div>
                         </div>
                     </div>
                 </div>
                 <div class="row g-4">
-                    <div class="col-12">
+                    <div class="col-12 col-lg-6">
                         <div class="chart-container p-4">
-                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Colores en Inventario</h5>
+                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Colores Top 15</h5>
                             <div id="realColorChart"></div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="chart-container p-4">
+                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Distribución por Fit</h5>
+                            <div id="fitChart" class="d-flex justify-content-center"></div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="chart-container p-4">
+                            <h5 class="fw-bold mb-3" style="color:${PALETA.primary}">Clima (Weather)</h5>
+                            <div id="weatherChart" class="d-flex justify-content-center"></div>
                         </div>
                     </div>
                 </div>
@@ -472,112 +468,132 @@ function loadPrendasCharts() {
         }
 
         setTimeout(() => {
-            drawScatterPlot(scatterData);
+            drawHeatmap(heatmapData, allStyles, allTypes);
             drawRealColorChart(colorData);
-        }, 150);
-
+            drawDonutChart(fitData, "fitChart", "fit");
+            drawPieChart(weatherData, "weatherChart", "weather");
+        }, 100);
     });
 }
 
-function drawScatterPlot(data) {
-    const container = document.getElementById("scatterChart");
-    if (!container) return; 
-    container.innerHTML = ""; 
+function drawHeatmap(data, xLabels, yLabels) {
+    const container = document.getElementById("heatmapChart");
+    if (!container) return;
+    container.innerHTML = "";
 
-    const width = container.getBoundingClientRect().width || 800; 
-    const height = 500;
-    const margin = { top: 20, right: 100, bottom: 80, left: 70 }; // Margen derecho para Leyenda
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
+    const width = container.getBoundingClientRect().width || 800;
+    const height = 450;
+    const margin = { top: 30, right: 30, bottom: 60, left: 100 };
 
     const svg = d3.select(container).append("svg")
         .attr("width", width).attr("height", height)
         .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // EJE X: Longitud (Numérico)
-    const x = d3.scaleLinear()
-        .domain([d3.min(data, d => d.length) * 0.9, d3.max(data, d => d.length) * 1.05])
-        .range([0, chartWidth]);
+    const w = width - margin.left - margin.right;
+    const h = height - margin.top - margin.bottom;
 
-    // EJE Y: Popularidad (Numérico)
-    const y = d3.scaleLinear() 
-        .domain([0, d3.max(data, d => d.count) * 1.1])
-        .range([chartHeight, 0]);
-    
-    // COLOR: Nivel (Paleta UI)
-    const color = d3.scaleOrdinal()
-        .domain(["1", "2", "3"])
-        .range([PALETA.secondary, PALETA.primary, PALETA.dark]);
+    const x = d3.scaleBand().range([0, w]).domain(xLabels).padding(0.05);
+    const y = d3.scaleBand().range([h, 0]).domain(yLabels).padding(0.05);
 
-    // RENDER EJES
-    svg.append("g").attr("transform", `translate(0,${chartHeight})`)
-        .call(d3.axisBottom(x))
-        .append("text").attr("x", chartWidth / 2).attr("y", 45)
-        .attr("fill", PALETA.dark).style("text-anchor", "middle").style("font-weight", "bold").text("Longitud Media (cm)");
+    const myColor = d3.scaleLinear().domain([0, d3.max(data, d => d.value)]).range(["#ffebe6", PALETA.primary]); 
 
-    svg.append("g").call(d3.axisLeft(y).ticks(8))
-        .append("text").attr("transform", "rotate(-90)").attr("y", -55).attr("x", -(chartHeight / 2))
-        .attr("fill", PALETA.dark).style("text-anchor", "middle").style("font-weight", "bold").text("Popularidad (Nº Items)");
+    svg.append("g").attr("transform", `translate(0,${h})`).call(d3.axisBottom(x).tickSize(0)).select(".domain").remove();
+    svg.selectAll(".tick text").style("font-size", "12px").style("fill", PALETA.dark).style("font-weight", "500");
+    svg.append("g").call(d3.axisLeft(y).tickSize(0)).select(".domain").remove();
 
-    // PUNTOS
-    svg.selectAll("circle").data(data).join("circle")
-        .attr("cx", d => x(d.length))
-        .attr("cy", d => y(d.count))
-        .attr("r", 7) 
-        .style("fill", d => color(d.nivel))
-        .style("opacity", 1)
-        .attr("stroke", "white")
-        .attr("stroke-width", 1)
-        .on("mouseover", (event, d) => {
-            d3.select(event.currentTarget).attr("r", 10).style("opacity", 1).attr("stroke", PALETA.dark);
+    svg.selectAll()
+        .data(data, d => d.group + ':' + d.variable)
+        .join("rect")
+        .attr("x", d => x(d.variable))
+        .attr("y", d => y(d.group))
+        .attr("width", x.bandwidth())
+        .attr("height", y.bandwidth())
+        .style("fill", d => d.value === 0 ? PALETA.empty : myColor(d.value))
+        .style("rx", 4).style("ry", 4)
+        .style("stroke", "none")
+        .on("mouseover", function(event, d) {
+            d3.select(this).style("stroke", PALETA.dark).style("stroke-width", 2);
             tooltip.style("opacity", 1)
-                .html(`<strong>Estilo: ${d.style}</strong><br>Nivel: ${d.nivel}<br>Largo: ${d.length.toFixed(1)}cm<br>Items: ${d.count}`)
+                .html(`<strong>${d.group}</strong> - ${d.variable}<br>Cantidad: ${d.value}`)
                 .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
         })
-        .on("mouseout", (e) => {
-            d3.select(e.currentTarget).attr("r", 7).style("opacity", 1).attr("stroke", "white");
+        .on("mouseout", function(event, d) {
+            d3.select(this).style("stroke", "none");
             tooltip.style("opacity", 0);
         });
+}
 
-    // LEYENDA (NIVEL) A LA DERECHA
-    const legend = svg.append("g").attr("transform", `translate(${chartWidth + 20}, 20)`);
-    
-    legend.append("text").attr("x", 0).attr("y", -10).text("Nivel").style("font-weight", "bold").style("fill", PALETA.dark);
-    
-    ["1", "2", "3"].forEach((nivel, i) => {
-        const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
-        row.append("circle").attr("r", 6).attr("fill", color(nivel));
-        row.append("text").attr("x", 15).attr("y", 4).text("Nivel " + nivel).style("font-size", "12px").style("fill", PALETA.secondary);
-    });
+function drawDonutChart(data, containerId, keyLabel) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const width = 250, height = 250, margin = 20;
+    const radius = Math.min(width, height) / 2 - margin;
+    const svg = d3.select(`#${containerId}`)
+      .append("svg").attr("width", width).attr("height", height)
+      .append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+    const color = d3.scaleOrdinal().range([PALETA.primary, PALETA.secondary, PALETA.accent, PALETA.dark, "#dba598"]);
+    const pie = d3.pie().value(d => d.count);
+    const data_ready = pie(data);
+    const arc = d3.arc().innerRadius(radius * 0.5).outerRadius(radius);
+    const arcHover = d3.arc().innerRadius(radius * 0.5).outerRadius(radius * 1.1);
+    svg.selectAll('path').data(data_ready).join('path')
+        .attr('d', arc).attr('fill', d => color(d.data[keyLabel])).attr("stroke", "white").style("stroke-width", "2px")
+        .on("mouseover", function(event, d) {
+            d3.select(this).transition().duration(200).attr("d", arcHover);
+            tooltip.style("opacity", 1).html(`<strong>${d.data[keyLabel]}</strong><br>${d.data.count}`)
+                .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            d3.select(this).transition().duration(200).attr("d", arc);
+            tooltip.style("opacity", 0);
+        });
+}
+
+function drawPieChart(data, containerId, keyLabel) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const width = 200, height = 200, margin = 10;
+    const radius = Math.min(width, height) / 2 - margin;
+    const svg = d3.select(`#${containerId}`)
+      .append("svg").attr("width", width).attr("height", height)
+      .append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+    const colorMap = {"warm": PALETA.accent, "cold": "#74b9ff"}; 
+    const pie = d3.pie().value(d => d.count);
+    const data_ready = pie(data);
+    const arc = d3.arc().innerRadius(0).outerRadius(radius);
+    svg.selectAll('path').data(data_ready).join('path')
+        .attr('d', arc).attr('fill', d => colorMap[d.data[keyLabel]] || PALETA.secondary).attr("stroke", "white").style("stroke-width", "2px")
+        .on("mouseover", function(event, d) {
+            d3.select(this).attr("opacity", 0.8);
+            tooltip.style("opacity", 1).html(`<strong>${d.data[keyLabel]}</strong><br>${d.data.count}`)
+                .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("opacity", 1);
+            tooltip.style("opacity", 0);
+        });
 }
 
 function drawRealColorChart(data) {
     const container = document.getElementById("realColorChart");
     if (!container) return;
     container.innerHTML = "";
-
-    const width = container.getBoundingClientRect().width || 600;
-    const height = 400;
-    const margin = { top: 20, right: 20, bottom: 80, left: 50 };
-
+    const width = container.getBoundingClientRect().width || 400;
+    const height = 300; 
+    const margin = { top: 20, right: 20, bottom: 80, left: 40 };
     const svg = d3.select(container).append("svg")
         .attr("width", width).attr("height", height)
         .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
     const x = d3.scaleBand().range([0, width - margin.left - margin.right]).domain(data.map(d => d.color)).padding(0.2);
     const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).range([height - margin.top - margin.bottom, 0]);
-
     svg.append("g").attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
         .call(d3.axisBottom(x)).selectAll("text")
         .attr("transform", "translate(-10,0)rotate(-45)").style("text-anchor", "end").style("fill", PALETA.dark);
-    
-    svg.append("g").call(d3.axisLeft(y));
-
-    // COLORES REALES
+    svg.append("g").call(d3.axisLeft(y).ticks(5));
     const getColorHex = (name) => {
-        const lowerName = name.toLowerCase();
+        const lowerName = name ? name.toLowerCase() : "";
         const map = {
-            'black': '#2d3436', 'white': '#dfe6e9', 'navy': '#0c2461', 'blue': '#0984e3', 
+            'black': '#2d3436', 'white': '#f5f6fa', 'navy': '#0c2461', 'blue': '#0984e3', 
             'blue_dark': '#0c2461', 'blue_light': '#74b9ff', 'red': '#d63031', 'grey': '#b2bec3', 
             'green': '#00b894', 'green_dark': '#006266', 'beige': '#f5f5dc', 'pink': '#fd79a8', 
             'purple': '#6c5ce7', 'yellow': '#ffeaa7', 'orange': '#e17055', 'brown': '#8d6e63', 
@@ -585,22 +601,21 @@ function drawRealColorChart(data) {
             'khaki': '#C3B091', 'lilac': '#C8A2C8', 'fuchsia': '#FF00FF', 'salmon': '#FA8072',
             'crimson': '#DC143C', 'coral': '#FF7F50', 'brick': '#8B0000', 'garnet': '#733635',
             'aubergine': '#580F41', 'nude': '#E3BC9A', 'silver': '#C0C0C0', 'gold': '#FFD700',
-            'mint': '#98FF98', 'olive': '#808000'
+            'mint': '#98FF98', 'olive': '#808000', 'multicolor': '#bdc3c7'
         };
-        return map[lowerName] || '#95a5a6'; 
+        return map[lowerName] || '#95a5a6';
     };
-
     svg.selectAll("mybar").data(data).join("rect")
         .attr("x", d => x(d.color)).attr("y", d => y(d.count))
-        .attr("width", x.bandwidth()).attr("height", d => height - margin.top - margin.bottom - y(d.count))
-        .attr("fill", d => getColorHex(d.color)).attr("rx", 4)
-        .on("mouseover", function(event, d) {
-            d3.select(this).style("opacity", 0.7);
-            tooltip.style("opacity", 1).html(`Color: <strong>${d.color}</strong><br>${d.count}`)
+        .attr("width", x.bandwidth()).attr("height", d => (height - margin.top - margin.bottom) - y(d.count))
+        .attr("fill", d => getColorHex(d.color)).attr("stroke", "#999").attr("stroke-width", "0.5px")
+        .on("mouseover", (event, d) => {
+            d3.select(event.currentTarget).attr("opacity", 0.7);
+            tooltip.style("opacity", 1).html(`<strong>${d.color}</strong><br>${d.count}`)
                 .style("left", (event.pageX + 10) + "px").style("top", (event.pageY - 28) + "px");
         })
-        .on("mouseout", function() {
-            d3.select(this).style("opacity", 1);
+        .on("mouseout", (e) => {
+            d3.select(e.currentTarget).attr("opacity", 1);
             tooltip.style("opacity", 0);
         });
 }
